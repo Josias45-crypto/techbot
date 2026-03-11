@@ -162,7 +162,7 @@ def chat(
                 conversation_id=str(conversation.id),
                 user_id=current_user.id if current_user else None,
                 reference_code=f"TKT-{datetime.utcnow().year}{count:04d}",
-                category="soporte_tecnico",
+                category="general",
                 priority="medium",
                 status="open",
                 channel_origin=data.channel,
