@@ -1,4 +1,4 @@
-# ==================================================
+﻿# ==================================================
 # backend/main.py
 # Punto de entrada principal de TechBot API.
 # Configura FastAPI, CORS, routers y health checks.
@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.core.config import settings
 from backend.app.core.database import check_db_connection
 from backend.app.api.v1.router import api_router
+from fastapi.staticfiles import StaticFiles
 
 # -- Instancia principal de FastAPI ---------------
 app = FastAPI(
@@ -32,6 +33,7 @@ app.add_middleware(
 # -- Registro del router principal -----------------
 # Todos los endpoints quedan bajo /api/v1/
 app.include_router(api_router)
+app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 
 # -- Eventos de inicio -----------------------------
 @app.on_event("startup")
