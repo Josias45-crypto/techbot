@@ -1,0 +1,79 @@
+﻿# ==================================================
+# docker-compose.yml
+# Orquesta los 3 contenedores de TechBot:
+# - techbot-api: FastAPI + Python
+# - techbot-db: PostgreSQL 16
+# - techbot-redis: Redis para cache y sesiones
+# ==================================================
+
+version: '3.9'
+
+services:
+
+  # -- BASE DE DATOS --------------------------------
+  db:
+    image: postgres:16-alpine        # Alpine = imagen liviana
+    container_name: techbot-db
+    restart: unless-stopped          # Se reinicia si falla
+    environment:
+      POSTGRES_DB: techbot_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: techbot123
+    ports:
+      - "5432:5432"                  # Expone el puerto para acceso externo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # Persiste los datos
+      - ./database/schemas:/docker-entrypoint-initdb.d  # Ejecuta los SQL al iniciar
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -- REDIS ----------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: techbot-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data             # Persiste el cache
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -- API FASTAPI ----------------------------------
+  api:
+    build: .                         # Construye desde el Dockerfile
+    container_name: techbot-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:techbot123@db:5432/techbot_db
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: 6896f2db3f97a17906eee3001f7b3e5bd143af2850e0b46c064896ea7334d524
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      APP_NAME: TechBot
+      APP_VERSION: 1.0.0
+      DEBUG: "False"
+      ALLOWED_ORIGINS: '["http://localhost:3000","http://localhost:8000"]'
+      NLP_MODEL: distilbert-base-multilingual-cased
+      CONFIDENCE_THRESHOLD: "0.75"
+    depends_on:
+      db:
+        condition: service_healthy   # Espera que PostgreSQL este listo
+      redis:
+        condition: service_healthy   # Espera que Redis este listo
+    volumes:
+      - .:/app                       # Monta el codigo para desarrollo
+
+# -- VOLUMENES PERSISTENTES -----------------------
+# Los datos sobreviven aunque se eliminen los contenedores
+volumes:
+  postgres_data:
+  redis_data:

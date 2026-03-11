@@ -1,0 +1,22 @@
+﻿# Entornos virtuales
+venv/
+venv_win/
+backend/venv/
+backend/venv_win/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Git
+.git/
+.gitignore
+
+# Variables de entorno locales
+.env
+
+# Cache y logs
+*.log
+.pytest_cache/
+
+# Node
+node_modules/
